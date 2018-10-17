@@ -7,7 +7,7 @@ function mod(n, m) {
   return ((n % m) + m) % m;
 }
 
-function alert ( text, icon, duration = 1 ) {
+function alert ( text, icon, duration = 1000 ) {
 
   const frame = Window.focused().screen().visibleFrame();
   
@@ -19,7 +19,7 @@ function alert ( text, icon, duration = 1 ) {
       };
     },
     weight: 24,
-    duration: 1,
+    duration: duration/1000,
     animationDuration: .3,
     appearance: 'dark',
     text,
@@ -27,6 +27,7 @@ function alert ( text, icon, duration = 1 ) {
   });
   
   modal.show ();
+  return modal;
 
 }
 
@@ -67,13 +68,13 @@ function shiftNScreens(increment = 1) {
 Key.on('right', ['alt', 'cmd'], function() {
   [nb, prev, next] = shiftNScreens(1);
   var screensStr = "⎚".repeat(nb).setCharAt(next,'⎙');
-  alert('Next screen\n'+screensStr);
+  alert(screensStr+'\nNext screen');
 });
 
 Key.on('left', ['alt', 'cmd'], function() {
 [nb, prev, next] = shiftNScreens(-1);
   var screensStr = "⎚".repeat(nb).setCharAt(next,'⎙');
-  alert('Previous screen\n'+screensStr);
+  alert(screensStr+'\nPrevious screen');
 });
 
 function shiftNDesktops(increment = 1) {
@@ -99,38 +100,62 @@ String.prototype.setCharAt = function(index,chr) {
 Key.on('right', ['ctrl', 'cmd'], function() {
   var [nb, prev, next] = shiftNDesktops(1);
   var desktopsStr = '□'.repeat(nb).setCharAt(next,'▣');
-  setTimeout(()=>alert('Next desktop\n'+desktopsStr), 350);
+  setTimeout(()=>alert(desktopsStr+'\nNext desktop'), 450);
 });
 
 Key.on('left', ['ctrl', 'cmd'], function() {
   var [nb, prev, next] = shiftNDesktops(-1);
   var desktopsStr = '□'.repeat(nb).setCharAt(next,'▣');
-  setTimeout(()=>alert('Previous desktop\n'+desktopsStr), 350);
+  setTimeout(()=>alert(desktopsStr+'\nPrevious desktop'), 450);
 });
 
+let windowsFrames = {};
+let lastFraction;
 function maximize(fraction = 1.0) {
   var window = Window.focused();
   var currentScreen = window.screen();
   var currentScreenFrame = currentScreen.flippedVisibleFrame();
 
-  var newFrame = {
-    x: currentScreenFrame.x + (currentScreenFrame.width*(1-fraction)/2),
-    y: currentScreenFrame.y + (currentScreenFrame.height*(1-fraction)/2),
-    width: currentScreenFrame.width*fraction,
-    height: currentScreenFrame.height*fraction
+  var key = window.hash();
+
+  if (!windowsFrames[key] || (lastFraction && lastFraction != fraction)) {
+    if (!lastFraction || lastFraction == fraction) windowsFrames[key] = window.frame();
+    var newFrame = {
+      x: currentScreenFrame.x + (currentScreenFrame.width*(1-fraction)/2),
+      y: currentScreenFrame.y + (currentScreenFrame.height*(1-fraction)/2),
+      width: currentScreenFrame.width*fraction,
+      height: currentScreenFrame.height*fraction
+    }
+  
+    Window.focused().setFrame(newFrame);
+    lastFraction = fraction;
+    return true;
+  } else {
+    Window.focused().setFrame(windowsFrames[key]);
+    windowsFrames[key] = null;
+    lastFraction = fraction;
+    return false;
   }
 
-  Window.focused().setFrame(newFrame)
+
 }
 
 Key.on('return', [ 'ctrl', 'alt', 'cmd'], function() {
-  maximize();
-  alert('▣\n100%');
+  var result = maximize();
+  if (result) {
+    alert('▣\n100%');
+  } else {
+    alert('⇲\nRestore')
+  }
 });
 
 Key.on('return', [ 'shift', 'ctrl', 'alt', 'cmd'], function() {
-  maximize(.85);
-  alert('▣\n85%');
+  var result = maximize(.85);
+  if (result) {
+    alert('▣\n85%');
+  } else {
+    alert('⇲\nRestore')
+  }
 });
 
 Key.on('=', [ 'ctrl', 'alt', 'cmd'], function() {
@@ -189,8 +214,17 @@ Key.on('space', [ 'ctrl', 'alt', 'cmd'], function() {
   alert('╳\nCenter');
 });
 
-function split(x,y,w,h) {
+Key.on('space', [ 'shift', 'ctrl', 'alt', 'cmd'], function() {
   var window = Window.focused();
+  window.setFullScreen ( !window.isFullScreen () );
+
+  var str = window.isFullScreen() ? '『 』\nFull screen' : '『 』\nExit full screen';
+  
+  setTimeout(()=>alert(str), 550);
+});
+
+function split(x,y,w,h, win=null) {
+  var window = win || Window.focused();
   var currentScreen = window.screen();
   var currentScreenFrame = currentScreen.flippedVisibleFrame();
 
@@ -201,7 +235,7 @@ function split(x,y,w,h) {
     height: currentScreenFrame.height*h
   }
 
-  Window.focused().setFrame(newFrame)
+  window.setFrame(newFrame)
 }
 
 
@@ -224,56 +258,178 @@ Key.on('down', [ 'ctrl', 'alt', 'cmd'], function() {
 
 Key.on('1', [ 'ctrl', 'alt', 'cmd'], function() {
   split(0,0,0.5,0.5);
-  var splitsStr = '▣□\n□□';
+  var splitsStr = '▣□\n□□\n4ths';
   alert(splitsStr);
 });
 Key.on('2', [ 'ctrl', 'alt', 'cmd'], function() {
   split(0.5,0,0.5,0.5);
-  var splitsStr = '□▣\n□□';
+  var splitsStr = '□▣\n□□\n4ths';
   alert(splitsStr);
 });
 Key.on('3', [ 'ctrl', 'alt', 'cmd'], function() {
   split(0,0.5,0.5,0.5);
-  var splitsStr = '□□\n▣□';
+  var splitsStr = '□□\n▣□\n4ths';
   alert(splitsStr);
 });
 Key.on('4', [ 'ctrl', 'alt', 'cmd'], function() {
   split(0.5,0.5,0.5,0.5);
-  var splitsStr = '□□\n□▣';
+  var splitsStr = '□□\n□▣\n4ths';
   alert(splitsStr);
 });
 
 Key.on('1', [ 'shift', 'ctrl', 'alt', 'cmd'], function() {
   split(0,0,1/3,1/2);
-  var splitsStr = '▣□□\n□□□';
+  var splitsStr = '▣□□\n□□□\n6ths';
   alert(splitsStr);
 });
 Key.on('2', [ 'shift', 'ctrl', 'alt', 'cmd'], function() {
   split(1/3,0,1/3,1/2);
-  var splitsStr = '□▣□\n□□□';
+  var splitsStr = '□▣□\n□□□\n6ths';
   alert(splitsStr);
 });
 Key.on('3', [ 'shift', 'ctrl', 'alt', 'cmd'], function() {
   split(2/3,0,1/3,1/2);
-  var splitsStr = '□□▣\n□□□';
+  var splitsStr = '□□▣\n□□□\n6ths';
   alert(splitsStr);
 });
 Key.on('4', [ 'shift', 'ctrl', 'alt', 'cmd'], function() {
   split(0,1/2,1/3,1/2);
-  var splitsStr = '□□□\n▣□□';
+  var splitsStr = '□□□\n▣□□\n6ths';
   alert(splitsStr);
 });
 Key.on('5', [ 'shift', 'ctrl', 'alt', 'cmd'], function() {
   split(1/3,1/2,1/3,1/2);
-  var splitsStr = '□□□\n□▣□';
+  var splitsStr = '□□□\n□▣□\n6ths';
   alert(splitsStr);
 });
 Key.on('6', [ 'shift', 'ctrl', 'alt', 'cmd'], function() {
   split(2/3,1/2,1/3,1/2);
-  var splitsStr = '□□□\n□□▣';
+  var splitsStr = '□□□\n□□▣\n6ths';
   alert(splitsStr);
 });
 
+
+var nbOfWindowsToArrange = 4;
+var arrangeVertically = false;
+function arrange() {
+  var window = Window.focused();
+  var currentScreen = window.screen();
+
+  var spaces = currentScreen.spaces();
+  var currentSpace = currentScreen.currentSpace();
+
+  var windows = _.slice(currentSpace.windows().filter(w=>w.title()!='' && w.title()!='Window'),0,nbOfWindowsToArrange);
+  var n = 2*Math.ceil(windows.length/2);
+  //alert(_.map(windows, w => w.title()))
+  _.each(windows, (w,i) => {
+    if (arrangeVertically) {
+      split(1/(n/2) * (Math.floor(i/2)), 1/2 * (i % 2), 1/(n/2), 1/2, w);
+      w.focus();
+    } else {
+      split(1/2 * (i % 2), 1/(n/2) * (Math.floor(i/2)), 1/2, 1/(n/2), w);
+      w.focus();
+    }
+  });
+}
+Key.on('tab', [ 'ctrl', 'alt', 'cmd'], function() {
+  alert(arrangeGridStr()+'\nArrange\n'+(arrangeVertically?'(vertical)':'(horizontal)'));
+  arrange();
+});
+Key.on('tab', [ 'shift', 'ctrl', 'alt', 'cmd'], function() {
+  arrangeVertically = !arrangeVertically;
+  alert(arrangeGridStr()+'\nNew arrange grid\n'+(arrangeVertically?'(vertical)':'(horizontal)'));
+});
+function arrangeGridStr() {
+  var str = arrangeVertically 
+    ? ('□'.repeat(Math.ceil(nbOfWindowsToArrange/2)) + ('\n'+ '□'.repeat(Math.floor(nbOfWindowsToArrange/2))+'⬚'.repeat(nbOfWindowsToArrange % 2)))
+    : (('□□\n').repeat(Math.floor(nbOfWindowsToArrange/2)-1)+'□□'+('\n□⬚'.repeat(nbOfWindowsToArrange % 2)));
+  return str;
+}
+Key.on('-', [ 'shift', 'ctrl', 'alt', 'cmd'], function() {
+  nbOfWindowsToArrange = Math.max(nbOfWindowsToArrange-1, 2);
+  alert(arrangeGridStr()+'\nNew arrange grid\n'+(arrangeVertically?'(vertical)':'(horizontal)'));
+});
+Key.on('=', [ 'shift', 'ctrl', 'alt', 'cmd'], function() {
+  nbOfWindowsToArrange = Math.min(nbOfWindowsToArrange+1, 12);
+  alert(arrangeGridStr()+'\nNew arrange grid\n'+(arrangeVertically?'(vertical)':'(horizontal)'));
+});
+
+
+
+let lastQuitTimestamp;
+let quitModal;
+const QUIT_BLACKLIST = ['Finder'];
+function quit() {
+  const timestamp = Date.now ();
+
+  const delay = 1500;
+
+  const app = App.focused ();
+  if ( !app || _.includes ( QUIT_BLACKLIST, app.name () ) ) return;
+
+  if ( lastQuitTimestamp && timestamp - lastQuitTimestamp <= delay ) {
+
+    quitModal.close()
+    alert('Quitting', App.focused().icon(), 250)
+    app.terminate ();
+
+    lastQuitTimestamp = 0;
+    quitModal = null;
+  } else {
+    
+    lastQuitTimestamp = timestamp;
+    quitModal = alert('Press ⌘Q again to quit', App.focused().icon(), delay)
+  }
+}
+
+Key.on( 'q', ['cmd'], function() {
+  quit();
+});
+function appLaunch(appFileName, appName) {
+  App.launch(appFileName);
+  
+  setTimeout(()=>{
+    var icon = App.get(appName).icon()
+    App.get(appName).focus()
+    alert(appFileName, icon)
+  }, 600);
+}
+
+Key.on('j',['ctrl','alt','cmd'], function() {
+  appLaunch('IntelliJ IDEA CE', 'IntelliJ IDEA')
+});
+
+Key.on('i',['ctrl','alt','cmd'], function() {
+  appLaunch('iTerm', 'iTerm2');
+});
+
+Key.on('c',['ctrl','alt','cmd'], function() {
+  appLaunch('Chrome', 'Google Chrome');
+});
+
+Key.on('v',['ctrl','alt','cmd'], function() {
+  appLaunch('Visual Studio Code', 'Code');
+});
+
+Key.on('s',['ctrl','alt','cmd'], function() {
+  appLaunch('Slack', 'Slack');
+});
+
+Key.on('t',['ctrl','alt','cmd'], function() {
+  appLaunch('Tower', 'Tower');
+});
+
+Key.on('f',['ctrl','alt','cmd'], function() {
+  appLaunch('Finder', 'Finder');
+});
+
+Key.on('n',['ctrl','alt','cmd'], function() {
+  appLaunch('Notes', 'Notes');
+});
+
+Key.on('e',['ctrl','alt','cmd'], function() {
+  appLaunch('Evernote', 'Evernote');
+});
 
 //var icon = Icon.getFromFile("/Users/pierre.borckmans/Desktop/test.png")
 //var iconResized = Icon.setWidthAndHeight(icon,160,160);
