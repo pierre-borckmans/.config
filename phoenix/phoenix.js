@@ -1,5 +1,5 @@
 Phoenix.set ({
-  daemon: false,
+  daemon: true,
   openAtLogin: true
 });
 
@@ -381,54 +381,58 @@ function quit() {
     quitModal = alert('Press ⌘Q again to quit', App.focused().icon(), delay)
   }
 }
-
 Key.on( 'q', ['cmd'], function() {
   quit();
 });
+
+
 function appLaunch(appFileName, appName) {
-  App.launch(appFileName);
-  
+  var app = App.get(appName);
+  var alreadyOpened = !!app;
+  var sameSpace;
+  if (alreadyOpened) {
+    var appSpace = app.mainWindow().spaces()[0];
+    var visibleSpace = app.mainWindow().screen().currentSpace();
+    sameSpace = visibleSpace.hash()==appSpace.hash();
+    app.focus();
+  } else {
+    App.launch(appFileName, {'focus':true});
+  }
   setTimeout(()=>{
     var icon = App.get(appName).icon()
-    App.get(appName).focus()
-    alert(appFileName, icon)
-  }, 600);
+    alert(appFileName, icon);
+  }, alreadyOpened && sameSpace ? 100 : 700);
 }
 
 Key.on('j',['ctrl','alt','cmd'], function() {
   appLaunch('IntelliJ IDEA CE', 'IntelliJ IDEA')
 });
-
 Key.on('i',['ctrl','alt','cmd'], function() {
   appLaunch('iTerm', 'iTerm2');
 });
-
 Key.on('c',['ctrl','alt','cmd'], function() {
   appLaunch('Chrome', 'Google Chrome');
 });
-
 Key.on('v',['ctrl','alt','cmd'], function() {
   appLaunch('Visual Studio Code', 'Code');
 });
-
 Key.on('s',['ctrl','alt','cmd'], function() {
   appLaunch('Slack', 'Slack');
 });
-
 Key.on('t',['ctrl','alt','cmd'], function() {
   appLaunch('Tower', 'Tower');
 });
-
 Key.on('f',['ctrl','alt','cmd'], function() {
   appLaunch('Finder', 'Finder');
 });
-
 Key.on('n',['ctrl','alt','cmd'], function() {
   appLaunch('Notes', 'Notes');
 });
-
 Key.on('e',['ctrl','alt','cmd'], function() {
   appLaunch('Evernote', 'Evernote');
+});
+Key.on('z',['ctrl','alt','cmd'], function() {
+  appLaunch('Visual Studio Code', 'Code', '~/.zshrc');
 });
 
 //var icon = Icon.getFromFile("/Users/pierre.borckmans/Desktop/test.png")
