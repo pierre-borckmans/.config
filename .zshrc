@@ -121,6 +121,13 @@ function pierre-master-cp-hdfs() {
 alias tracking='ssh -i "~/.ssh/dev-letgo.pem" ec2-user@10.20.0.95'
 
 
+function loop() {
+  while [ true ]
+  do
+    eval "$*"
+  done
+}
+
 
 POWERLEVEL9K_MODE='nerdfont-complete'
 
